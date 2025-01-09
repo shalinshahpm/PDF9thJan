@@ -144,7 +144,10 @@ def encrypt_pdf():
         return jsonify({'error': 'No file provided'}), 400
 
     file = request.files['file']
-    password = request.form.get('password', '')
+    password = request.form.get('password')
+
+    if not password:
+        return jsonify({'error': 'Password is required'}), 400
 
     try:
         pdf = PdfReader(io.BytesIO(file.read()))
@@ -190,10 +193,32 @@ def compress_pdf():
         writer = PdfWriter()
 
         for page in pdf.pages:
-            page.compress_content_streams()  # This compresses PDF content
+            # Apply multiple compression techniques
+            page.compress_content_streams()  # Compress page contents
+
+            # Remove unnecessary metadata
+            if '/Metadata' in page:
+                del page['/Metadata']
+
+            # Reduce image quality if present
+            for key in page:
+                if '/XObject' in page[key]:
+                    xObject = page[key]['/XObject'].get_object()
+                    for obj in xObject:
+                        if xObject[obj]['/Subtype'] == '/Image':
+                            if '/Filter' in xObject[obj]:
+                                if '/ColorSpace' in xObject[obj]:
+                                    if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
+                                        xObject[obj]['/ColorSpace'] = '/DeviceGray'
+                                if '/BitsPerComponent' in xObject[obj]:
+                                    if xObject[obj]['/BitsPerComponent'] > 4:
+                                        xObject[obj]['/BitsPerComponent'] = 4
+
             writer.add_page(page)
 
+        # Set compression parameters
         output = io.BytesIO()
+        writer._compress = True
         writer.write(output)
         output.seek(0)
 

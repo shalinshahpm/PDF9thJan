@@ -161,10 +161,25 @@ class PDFDropzone {
 
             if (operation === 'split') {
                 const pageRanges = document.getElementById('page-ranges').value;
+                if (!pageRanges) {
+                    this.showError('Please enter page ranges (e.g., 1-3,4-6)');
+                    return;
+                }
                 formData.append('ranges', pageRanges);
             } else if (operation === 'watermark') {
                 const watermarkText = document.getElementById('watermark-text').value;
+                if (!watermarkText) {
+                    this.showError('Please enter watermark text');
+                    return;
+                }
                 formData.append('text', watermarkText);
+            } else if (operation === 'encrypt') {
+                const password = document.getElementById('pdf-password').value;
+                if (!password) {
+                    this.showError('Please enter a password for encryption');
+                    return;
+                }
+                formData.append('password', password);
             }
         }
 
@@ -188,6 +203,7 @@ class PDFDropzone {
             document.body.appendChild(a);
             a.click();
             a.remove();
+            window.URL.revokeObjectURL(url);
 
             this.updateProgressBar(100);
             setTimeout(() => {
