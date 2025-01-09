@@ -1,4 +1,5 @@
 import io
+import logging
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 from flask_login import login_required, current_user
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
@@ -8,6 +9,96 @@ from models import PDFFile
 from app import db
 
 pdf_bp = Blueprint('pdf', __name__, url_prefix='/pdf')
+
+# Configure logging for PDF operations
+logger = logging.getLogger(__name__)
+
+@pdf_bp.route('/compress', methods=['POST'])
+@login_required
+def compress_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    try:
+        # Read input file size for comparison
+        input_data = file.read()
+        input_size = len(input_data)
+        logger.info(f"Input PDF size: {input_size} bytes")
+
+        pdf = PdfReader(io.BytesIO(input_data))
+        writer = PdfWriter()
+
+        for page_num, page in enumerate(pdf.pages, 1):
+            logger.info(f"Processing page {page_num}")
+
+            # Compress content streams
+            page.compress_content_streams()
+
+            # Remove unnecessary elements
+            unnecessary_keys = ['/Metadata', '/StructParents', '/StructTreeRoot', '/AcroForm']
+            for key in unnecessary_keys:
+                if key in page:
+                    del page[key]
+
+            # Process images
+            if '/Resources' in page:
+                resources = page['/Resources']
+                if '/XObject' in resources:
+                    xObject = resources['/XObject'].get_object()
+
+                    for obj in xObject:
+                        if xObject[obj]['/Subtype'] == '/Image':
+                            image = xObject[obj]
+                            # Convert RGB to Grayscale
+                            if '/ColorSpace' in image and image['/ColorSpace'] == '/DeviceRGB':
+                                image['/ColorSpace'] = '/DeviceGray'
+
+                            # Reduce bits per component
+                            if '/BitsPerComponent' in image:
+                                image['/BitsPerComponent'] = 4
+
+                            # Apply maximum compression to images
+                            if '/Filter' in image:
+                                if isinstance(image['/Filter'], list):
+                                    image['/Filter'] = ['/FlateDecode']
+                                else:
+                                    image['/Filter'] = '/FlateDecode'
+
+            writer.add_page(page)
+
+        # Set maximum compression
+        output = io.BytesIO()
+        writer._compress = True
+        writer.write(output)
+        output.seek(0)
+
+        # Compare sizes
+        output_size = output.getbuffer().nbytes
+        compression_ratio = (1 - (output_size / input_size)) * 100
+        logger.info(f"Output PDF size: {output_size} bytes")
+        logger.info(f"Compression ratio: {compression_ratio:.2f}%")
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='compressed.pdf',
+            user_id=current_user.id,
+            operation_type='compress',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='compressed.pdf'
+        )
+
+    except Exception as e:
+        logger.error(f"Compression error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @pdf_bp.route('/operations')
 @login_required
@@ -176,67 +267,6 @@ def encrypt_pdf():
             mimetype='application/pdf',
             as_attachment=True,
             download_name='encrypted.pdf'
-        )
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@pdf_bp.route('/compress', methods=['POST'])
-@login_required
-def compress_pdf():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-
-    file = request.files['file']
-    try:
-        pdf = PdfReader(io.BytesIO(file.read()))
-        writer = PdfWriter()
-
-        for page in pdf.pages:
-            # Apply multiple compression techniques
-            page.compress_content_streams()  # Compress page contents
-
-            # Remove unnecessary metadata
-            if '/Metadata' in page:
-                del page['/Metadata']
-
-            # Reduce image quality if present
-            for key in page:
-                if '/XObject' in page[key]:
-                    xObject = page[key]['/XObject'].get_object()
-                    for obj in xObject:
-                        if xObject[obj]['/Subtype'] == '/Image':
-                            if '/Filter' in xObject[obj]:
-                                if '/ColorSpace' in xObject[obj]:
-                                    if xObject[obj]['/ColorSpace'] == '/DeviceRGB':
-                                        xObject[obj]['/ColorSpace'] = '/DeviceGray'
-                                if '/BitsPerComponent' in xObject[obj]:
-                                    if xObject[obj]['/BitsPerComponent'] > 4:
-                                        xObject[obj]['/BitsPerComponent'] = 4
-
-            writer.add_page(page)
-
-        # Set compression parameters
-        output = io.BytesIO()
-        writer._compress = True
-        writer.write(output)
-        output.seek(0)
-
-        # Save operation record
-        pdf_file = PDFFile(
-            filename='compressed.pdf',
-            user_id=current_user.id,
-            operation_type='compress',
-            status='completed'
-        )
-        db.session.add(pdf_file)
-        db.session.commit()
-
-        return send_file(
-            output,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name='compressed.pdf'
         )
 
     except Exception as e:
