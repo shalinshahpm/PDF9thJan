@@ -11,7 +11,7 @@
     <div class="col-md-10 mx-auto">
         <div class="card mb-4">
             <div class="card-body">
-                <div id="drop-zone" class="text-center p-5 border-2 border-dashed rounded-lg" data-toggle="tooltip" data-placement="top" title="Drag and drop your PDF files here or click to select files from your computer">
+                <div id="drop-zone" class="text-center p-5 border-2 border-dashed rounded-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Drag and drop your PDF files here or click to select files from your computer">
                     <i data-feather="upload-cloud" class="mb-3" style="width: 48px; height: 48px;"></i>
                     <h4>Drag and drop PDF files here</h4>
                     <p class="text-muted">or click to select files</p>
@@ -26,7 +26,7 @@
         <div class="row">
             <!-- Original Operations -->
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Split a PDF into multiple documents based on page ranges (e.g., '1-3,4-6' will create two PDFs)">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Split a PDF into multiple documents based on page ranges (e.g., '1-3,4-6' will create two PDFs)">
                     <div class="card-body text-center">
                         <i data-feather="scissors" class="mb-3"></i>
                         <h5>Split PDF</h5>
@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Combine multiple PDF files into a single document. Drag files to reorder them">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Combine multiple PDF files into a single document. Drag files to reorder them">
                     <div class="card-body text-center">
                         <i data-feather="git-merge" class="mb-3"></i>
                         <h5>Merge PDFs</h5>
@@ -51,7 +51,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Add a watermark text to your PDF. Choose position and color of the watermark">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Add a watermark text to your PDF. Choose position and color of the watermark">
                     <div class="card-body text-center">
                         <i data-feather="type" class="mb-3"></i>
                         <h5>Watermark</h5>
@@ -72,7 +72,7 @@
             </div>
             <!-- New Operations -->
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Convert PDF pages to images. Choose PNG or JPG format and set the image quality with DPI">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Convert PDF pages to images. Choose PNG or JPG format and set the image quality with DPI">
                     <div class="card-body text-center">
                         <i data-feather="image" class="mb-3"></i>
                         <h5>PDF to Images</h5>
@@ -88,7 +88,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Rotate specific pages in your PDF. Select rotation angle and specify pages to rotate">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Rotate specific pages in your PDF. Select rotation angle and specify pages to rotate">
                     <div class="card-body text-center">
                         <i data-feather="rotate-cw" class="mb-3"></i>
                         <h5>Rotate Pages</h5>
@@ -105,7 +105,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Add text to your PDF. Specify position (X,Y coordinates) and color of the text">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Add text to your PDF. Specify position (X,Y coordinates) and color of the text">
                     <div class="card-body text-center">
                         <i data-feather="edit-3" class="mb-3"></i>
                         <h5>Add Text</h5>
@@ -120,7 +120,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Extract text content from your PDF. Choose specific pages and output format (TXT or JSON)">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Extract text content from your PDF. Choose specific pages and output format (TXT or JSON)">
                     <div class="card-body text-center">
                         <i data-feather="file-text" class="mb-3"></i>
                         <h5>Extract Text</h5>
@@ -136,7 +136,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Arrange multiple pages into a single page. Choose layout format (1x1, 2x1, or 2x2)">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Arrange multiple pages into a single page. Choose layout format (1x1, 2x1, or 2x2)">
                     <div class="card-body text-center">
                         <i data-feather="grid" class="mb-3"></i>
                         <h5>Organize Pages</h5>
@@ -152,7 +152,7 @@
                 </div>
             </div>
             <div class="col-md-4 mb-3">
-                <div class="card h-100" data-toggle="tooltip" data-placement="top" title="Set password protection and permissions for your PDF. Configure owner and user passwords, and set access permissions">
+                <div class="card h-100" data-bs-toggle="tooltip" data-bs-placement="top" title="Set password protection and permissions for your PDF. Configure owner and user passwords, and set access permissions">
                     <div class="card-body text-center">
                         <i data-feather="shield" class="mb-3"></i>
                         <h5>PDF Security</h5>
@@ -175,18 +175,9 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
-<script src="https://unpkg.com/feather-icons"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
-<script>
-    feather.replace();
-    // Initialize tooltips
-    $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-    });
-</script>
 <script src="{{ url_for('static', filename='js/pdf-operations.js') }}"></script>
 {% endblock %}
