@@ -1,8 +1,8 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
@@ -16,7 +16,7 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-    
+
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'dev_key')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -35,7 +35,7 @@ def create_app():
     with app.app_context():
         # Import models
         from models import User
-        
+
         # Import blueprints
         from blueprints.auth import auth_bp
         from blueprints.pdf import pdf_bp
@@ -45,6 +45,13 @@ def create_app():
         app.register_blueprint(auth_bp)
         app.register_blueprint(pdf_bp)
         app.register_blueprint(subscription_bp)
+
+        # Root route
+        @app.route('/')
+        def index():
+            if current_user.is_authenticated:
+                return redirect(url_for('pdf.operations'))
+            return redirect(url_for('auth.login'))
 
         # Create database tables
         db.create_all()
