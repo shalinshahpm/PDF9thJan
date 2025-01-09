@@ -237,19 +237,28 @@ class PDFOperations {
             }
 
             this.updateProgress(80);
-            const blob = await response.blob();
-            const contentType = response.headers.get('content-type');
-            let filename = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'output';
 
-            if (!filename.includes('.')) {
-                if (contentType.includes('pdf')) {
-                    filename += '.pdf';
-                } else if (contentType.includes('zip')) {
-                    filename += '.zip';
-                } else if (contentType.includes('json')) {
-                    filename += '.json';
-                } else if (contentType.includes('text')) {
-                    filename += '.txt';
+            const contentType = response.headers.get('content-type');
+            let blob;
+            let filename;
+
+            if (contentType.includes('json')) {
+                const jsonData = await response.json();
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                blob = new Blob([jsonString], { type: 'application/json' });
+                filename = 'extracted_text.json';
+            } else {
+                blob = await response.blob();
+                filename = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'output';
+
+                if (!filename.includes('.')) {
+                    if (contentType.includes('pdf')) {
+                        filename += '.pdf';
+                    } else if (contentType.includes('zip')) {
+                        filename += '.zip';
+                    } else if (contentType.includes('text')) {
+                        filename += '.txt';
+                    }
                 }
             }
 

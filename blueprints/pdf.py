@@ -3,7 +3,7 @@ import logging
 import zipfile
 import json
 from PIL import Image
-from flask import Blueprint, render_template, request, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, jsonify, send_file, Response, current_app
 from flask_login import login_required, current_user
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
@@ -483,25 +483,9 @@ def extract_text():
             if i < len(pdf.pages):
                 text_content[f'page_{i+1}'] = pdf.pages[i].extract_text()
 
-        output = io.BytesIO()
-
-        if format == 'json':
-            json_data = json.dumps(text_content, indent=2)
-            output.write(json_data.encode('utf-8'))
-            mimetype = 'application/json'
-            filename = 'extracted_text.json'
-        else:
-            # Format as plain text
-            text = '\n\n'.join([f'=== Page {k} ===\n{v}' for k, v in text_content.items()])
-            output.write(text.encode('utf-8'))
-            mimetype = 'text/plain'
-            filename = 'extracted_text.txt'
-
-        output.seek(0)
-
         # Save operation record
         pdf_file = PDFFile(
-            filename=filename,
+            filename=f'extracted_text.{format}',
             user_id=current_user.id,
             operation_type='extract_text',
             status='completed'
@@ -509,14 +493,14 @@ def extract_text():
         db.session.add(pdf_file)
         db.session.commit()
 
-        response = send_file(
-            output,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=filename
-        )
-        response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
-        return response
+        if format == 'json':
+            return jsonify(text_content)
+        else:
+            # Format as plain text
+            text = '\n\n'.join([f'=== Page {k} ===\n{v}' for k, v in text_content.items()])
+            response = Response(text, mimetype='text/plain')
+            response.headers['Content-Disposition'] = f'attachment; filename=extracted_text.txt'
+            return response
 
     except Exception as e:
         logger.error(f"Text extraction error: {str(e)}")

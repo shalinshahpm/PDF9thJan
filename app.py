@@ -34,7 +34,7 @@ def create_app():
 
     with app.app_context():
         # Import models
-        from models import User
+        from models import User, PDFFile
 
         # Import blueprints
         from blueprints.auth import auth_bp
@@ -46,15 +46,15 @@ def create_app():
         app.register_blueprint(pdf_bp)
         app.register_blueprint(subscription_bp)
 
+        # Create database tables
+        db.create_all()
+
         # Root route
         @app.route('/')
         def index():
             if current_user.is_authenticated:
                 return redirect(url_for('pdf.operations'))
             return redirect(url_for('auth.login'))
-
-        # Create database tables
-        db.create_all()
 
         @login_manager.user_loader
         def load_user(user_id):
