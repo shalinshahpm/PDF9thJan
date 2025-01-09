@@ -1,6 +1,7 @@
 import io
 import logging
 import zipfile
+import json
 from PIL import Image
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 from flask_login import login_required, current_user
@@ -15,6 +16,11 @@ pdf_bp = Blueprint('pdf', __name__, url_prefix='/pdf')
 
 # Configure logging for PDF operations
 logger = logging.getLogger(__name__)
+
+@pdf_bp.errorhandler(Exception)
+def handle_error(error):
+    logger.error(f"Operation error: {str(error)}")
+    return jsonify({'error': str(error)}), 500
 
 @pdf_bp.route('/compress', methods=['POST'])
 @login_required
@@ -449,14 +455,14 @@ def add_text():
 @pdf_bp.route('/extract-text', methods=['POST'])
 @login_required
 def extract_text():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-
-    file = request.files['file']
-    pages = request.form.get('pages', '')
-    format = request.form.get('format', 'txt')
-
     try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        pages = request.form.get('pages', '')
+        format = request.form.get('format', 'txt')
+
         pdf = PdfReader(io.BytesIO(file.read()))
 
         # Parse page ranges
@@ -480,8 +486,8 @@ def extract_text():
         output = io.BytesIO()
 
         if format == 'json':
-            import json
-            output.write(json.dumps(text_content, indent=2).encode('utf-8'))
+            json_data = json.dumps(text_content, indent=2)
+            output.write(json_data.encode('utf-8'))
             mimetype = 'application/json'
             filename = 'extracted_text.json'
         else:
@@ -503,12 +509,14 @@ def extract_text():
         db.session.add(pdf_file)
         db.session.commit()
 
-        return send_file(
+        response = send_file(
             output,
             mimetype=mimetype,
             as_attachment=True,
             download_name=filename
         )
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        return response
 
     except Exception as e:
         logger.error(f"Text extraction error: {str(e)}")

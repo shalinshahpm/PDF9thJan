@@ -15,5 +15,6 @@ dependencies = [
     "reportlab>=4.2.5",
     "sqlalchemy>=2.0.36",
     "stripe>=11.4.1",
+    "trafilatura>=2.0.0",
     "werkzeug>=3.1.3",
 ]

@@ -100,15 +100,22 @@ class PDFOperations {
     }
 
     showError(message) {
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-        document.getElementById('error-message').textContent = message;
-        errorModal.show();
+        const errorDiv = document.createElement('div');
+        errorDiv.classList.add('alert', 'alert-danger', 'mt-3');
+        errorDiv.textContent = message;
+        this.dropZone.parentElement.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
     }
 
-    showSuccess(downloadUrl) {
-        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-        document.getElementById('download-link').href = downloadUrl;
-        successModal.show();
+    async downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     async processOperation(operation) {
@@ -151,7 +158,6 @@ class PDFOperations {
                     formData.append('file', this.files[0]);
                     break;
 
-                // Add handlers for new operations
                 case 'toImages':
                     const format = document.getElementById('image-format').value;
                     const dpi = document.getElementById('image-dpi').value;
@@ -168,25 +174,55 @@ class PDFOperations {
                     formData.append('file', this.files[0]);
                     break;
 
+                case 'addText':
+                    const text = document.getElementById('add-text').value;
+                    const x = document.getElementById('text-x').value;
+                    const y = document.getElementById('text-y').value;
+                    const textColor = document.getElementById('text-color').value;
+
+                    if (!text) {
+                        this.showError('Please enter text to add');
+                        return;
+                    }
+
+                    formData.append('text', text);
+                    formData.append('x', x);
+                    formData.append('y', y);
+                    formData.append('color', textColor);
+                    formData.append('file', this.files[0]);
+                    break;
+
+                case 'extractText':
+                    const extractPages = document.getElementById('extract-pages').value;
+                    const extractFormat = document.getElementById('extract-format').value;
+                    formData.append('pages', extractPages);
+                    formData.append('format', extractFormat);
+                    formData.append('file', this.files[0]);
+                    break;
+
+                case 'organize':
+                    const layout = document.getElementById('page-layout').value;
+                    formData.append('layout', layout);
+                    formData.append('file', this.files[0]);
+                    break;
+
                 case 'secure':
                     const ownerPassword = document.getElementById('owner-password').value;
                     const userPassword = document.getElementById('user-password').value;
                     const allowPrint = document.getElementById('allow-print').checked;
                     const allowCopy = document.getElementById('allow-copy').checked;
-                    
+
                     if (!ownerPassword && !userPassword) {
                         this.showError('Please enter at least one password');
                         return;
                     }
-                    
+
                     formData.append('owner_password', ownerPassword);
                     formData.append('user_password', userPassword);
                     formData.append('allow_print', allowPrint);
                     formData.append('allow_copy', allowCopy);
                     formData.append('file', this.files[0]);
                     break;
-
-                // Add more cases for other operations
             }
 
             this.updateProgress(20);
@@ -202,15 +238,29 @@ class PDFOperations {
 
             this.updateProgress(80);
             const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            
+            const contentType = response.headers.get('content-type');
+            let filename = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'output';
+
+            if (!filename.includes('.')) {
+                if (contentType.includes('pdf')) {
+                    filename += '.pdf';
+                } else if (contentType.includes('zip')) {
+                    filename += '.zip';
+                } else if (contentType.includes('json')) {
+                    filename += '.json';
+                } else if (contentType.includes('text')) {
+                    filename += '.txt';
+                }
+            }
+
+            this.updateProgress(90);
+            await this.downloadBlob(blob, filename);
             this.updateProgress(100);
-            this.showSuccess(url);
-            
+
             // Clean up
             this.files = [];
             this.updateFileList();
-            
+
         } catch (error) {
             console.error('Operation error:', error);
             this.showError(error.message || 'An error occurred during the operation');
