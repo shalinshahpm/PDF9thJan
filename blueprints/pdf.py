@@ -1,10 +1,13 @@
 import io
 import logging
+import zipfile
+from PIL import Image
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 from flask_login import login_required, current_user
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import Color, HexColor
 from models import PDFFile
 from app import db
 
@@ -270,4 +273,309 @@ def encrypt_pdf():
         )
 
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/to-images', methods=['POST'])
+@login_required
+def pdf_to_images():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    format = request.form.get('format', 'png')
+    dpi = int(request.form.get('dpi', 300))
+
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for page_num in range(len(pdf.pages)):
+                # Convert PDF page to image
+                page = pdf.pages[page_num]
+
+                # Create a bytes buffer for the image
+                image_buffer = io.BytesIO()
+
+                # Convert PDF page to image using Pillow
+                pil_image = page.to_image(resolution=dpi)
+                pil_image.save(image_buffer, format=format.upper())
+                image_buffer.seek(0)
+
+                # Add image to zip file
+                filename = f'page_{page_num + 1}.{format}'
+                zip_file.writestr(filename, image_buffer.getvalue())
+
+        zip_buffer.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='pdf_images.zip',
+            user_id=current_user.id,
+            operation_type='to_images',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='pdf_images.zip'
+        )
+
+    except Exception as e:
+        logger.error(f"PDF to Images error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/rotate', methods=['POST'])
+@login_required
+def rotate_pages():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    angle = int(request.form.get('angle', 90))
+    pages = request.form.get('pages', '')
+
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+        writer = PdfWriter()
+
+        # Parse page ranges
+        if pages:
+            page_list = []
+            for range_str in pages.split(','):
+                if '-' in range_str:
+                    start, end = map(int, range_str.split('-'))
+                    page_list.extend(range(start - 1, min(end, len(pdf.pages))))
+                else:
+                    page_list.append(int(range_str) - 1)
+        else:
+            page_list = range(len(pdf.pages))
+
+        # Rotate specified pages
+        for i in range(len(pdf.pages)):
+            page = pdf.pages[i]
+            if i in page_list:
+                page.rotate(angle)
+            writer.add_page(page)
+
+        output = io.BytesIO()
+        writer.write(output)
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='rotated.pdf',
+            user_id=current_user.id,
+            operation_type='rotate',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='rotated.pdf'
+        )
+
+    except Exception as e:
+        logger.error(f"Rotation error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/add-text', methods=['POST'])
+@login_required
+def add_text():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    text = request.form.get('text', '')
+    x = float(request.form.get('x', 100))
+    y = float(request.form.get('y', 100))
+    color = request.form.get('color', '#000000')
+
+    try:
+        # Create PDF with text
+        text_layer = io.BytesIO()
+        c = canvas.Canvas(text_layer, pagesize=letter)
+
+        # Convert hex color to RGB
+        color = HexColor(color)
+        c.setFillColor(color)
+
+        c.drawString(x, y, text)
+        c.save()
+        text_layer.seek(0)
+
+        # Merge text layer with original PDF
+        pdf = PdfReader(io.BytesIO(file.read()))
+        text_pdf = PdfReader(text_layer)
+        writer = PdfWriter()
+
+        for page in pdf.pages:
+            page.merge_page(text_pdf.pages[0])
+            writer.add_page(page)
+
+        output = io.BytesIO()
+        writer.write(output)
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='text_added.pdf',
+            user_id=current_user.id,
+            operation_type='add_text',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='text_added.pdf'
+        )
+
+    except Exception as e:
+        logger.error(f"Add text error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/extract-text', methods=['POST'])
+@login_required
+def extract_text():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    pages = request.form.get('pages', '')
+    format = request.form.get('format', 'txt')
+
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+
+        # Parse page ranges
+        if pages:
+            page_list = []
+            for range_str in pages.split(','):
+                if '-' in range_str:
+                    start, end = map(int, range_str.split('-'))
+                    page_list.extend(range(start - 1, min(end, len(pdf.pages))))
+                else:
+                    page_list.append(int(range_str) - 1)
+        else:
+            page_list = range(len(pdf.pages))
+
+        # Extract text
+        text_content = {}
+        for i in page_list:
+            if i < len(pdf.pages):
+                text_content[f'page_{i+1}'] = pdf.pages[i].extract_text()
+
+        output = io.BytesIO()
+
+        if format == 'json':
+            import json
+            output.write(json.dumps(text_content, indent=2).encode('utf-8'))
+            mimetype = 'application/json'
+            filename = 'extracted_text.json'
+        else:
+            # Format as plain text
+            text = '\n\n'.join([f'=== Page {k} ===\n{v}' for k, v in text_content.items()])
+            output.write(text.encode('utf-8'))
+            mimetype = 'text/plain'
+            filename = 'extracted_text.txt'
+
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename=filename,
+            user_id=current_user.id,
+            operation_type='extract_text',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        logger.error(f"Text extraction error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/organize', methods=['POST'])
+@login_required
+def organize_pages():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    layout = request.form.get('layout', '1x1')
+
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+        writer = PdfWriter()
+
+        # Parse layout
+        rows, cols = map(int, layout.split('x'))
+
+        # Calculate pages per sheet
+        pages_per_sheet = rows * cols
+        total_pages = len(pdf.pages)
+
+        # Process pages in groups
+        for i in range(0, total_pages, pages_per_sheet):
+            # Create a new page with the specified layout
+            output_page = writer.add_blank_page(
+                width=letter[0] * cols,
+                height=letter[1] * rows
+            )
+
+            # Add pages to the layout
+            for j in range(pages_per_sheet):
+                if i + j < total_pages:
+                    page = pdf.pages[i + j]
+                    # Calculate position in the grid
+                    row = j // cols
+                    col = j % cols
+                    # Translate and scale the page
+                    page.scale_to(1.0/cols, 1.0/rows)
+                    page.translate(col * letter[0], (rows - 1 - row) * letter[1])
+                    # Merge into output page
+                    output_page.merge_page(page)
+
+        output = io.BytesIO()
+        writer.write(output)
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='organized.pdf',
+            user_id=current_user.id,
+            operation_type='organize',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='organized.pdf'
+        )
+
+    except Exception as e:
+        logger.error(f"Page organization error: {str(e)}")
         return jsonify({'error': str(e)}), 500
