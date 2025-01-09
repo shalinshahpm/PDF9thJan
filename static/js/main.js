@@ -67,16 +67,25 @@ function handleFiles(files) {
 }
 
 // Stripe integration
-function initializeStripe() {
-    const stripe = Stripe('your_publishable_key');
+let stripe;
+
+async function initializeStripe() {
+    // Get the publishable key from the server
+    const response = await fetch('/subscription/config');
+    const {publishableKey} = await response.json();
+    stripe = Stripe(publishableKey);
+
     const buttons = document.querySelectorAll('.subscribe-button');
-    
     buttons.forEach(button => {
         button.addEventListener('click', async (e) => {
             e.preventDefault();
             const priceId = button.getAttribute('data-price-id');
-            
+
             try {
+                // Show loading state
+                button.disabled = true;
+                button.textContent = 'Processing...';
+
                 const response = await fetch('/subscription/create-checkout-session', {
                     method: 'POST',
                     headers: {
@@ -84,17 +93,34 @@ function initializeStripe() {
                     },
                     body: `price_id=${priceId}`
                 });
-                
+
                 const session = await response.json();
+
+                if (session.error) {
+                    throw new Error(session.error);
+                }
+
                 const result = await stripe.redirectToCheckout({
                     sessionId: session.sessionId
                 });
-                
+
                 if (result.error) {
-                    alert(result.error.message);
+                    throw new Error(result.error.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
+                // Show error to customer
+                const errorDiv = document.createElement('div');
+                errorDiv.classList.add('alert', 'alert-danger', 'mt-3');
+                errorDiv.textContent = error.message;
+                button.parentElement.appendChild(errorDiv);
+
+                // Reset button state
+                button.disabled = false;
+                button.textContent = 'Upgrade to Pro';
+
+                // Remove error message after 5 seconds
+                setTimeout(() => errorDiv.remove(), 5000);
             }
         });
     });

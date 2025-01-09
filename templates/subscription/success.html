@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Status{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if status == 'success' %}
+                        <i data-feather="check-circle" class="text-success mb-3" style="width: 48px; height: 48px;"></i>
+                        <h2 class="card-title">Thank You!</h2>
+                        <p class="card-text">{{ message }}</p>
+                        <div class="mt-4">
+                            <a href="{{ url_for('pdf.operations') }}" class="btn btn-primary">Go to PDF Tools</a>
+                        </div>
+                    {% else %}
+                        <i data-feather="alert-circle" class="text-danger mb-3" style="width: 48px; height: 48px;"></i>
+                        <h2 class="card-title">Oops!</h2>
+                        <p class="card-text">{{ message }}</p>
+                        <div class="mt-4">
+                            <a href="{{ url_for('subscription.plans') }}" class="btn btn-primary">Try Again</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+    });
+</script>
+{% endblock %}
