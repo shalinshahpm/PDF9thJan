@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Welcome, {{ current_user.username }}</h2>
+            <p class="text-muted">
+                Subscription Status: 
+                <span class="badge {% if current_user.subscription_status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                    {{ current_user.subscription_status|title }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Operations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Operation</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for operation in current_user.pdf_files[-5:]|reverse %}
+                                <tr>
+                                    <td>{{ operation.filename }}</td>
+                                    <td>{{ operation.operation_type|title }}</td>
+                                    <td>{{ operation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <span class="badge {% if operation.status == 'completed' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ operation.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No recent operations</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('pdf.operations') }}" class="btn btn-primary">
+                            <i data-feather="file-plus" class="me-2"></i>
+                            New PDF Operation
+                        </a>
+                        <a href="{{ url_for('subscription.plans') }}" class="btn btn-outline-primary">
+                            <i data-feather="star" class="me-2"></i>
+                            Upgrade Plan
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Usage Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Operations Today</label>
+                        <div class="progress">
+                            {% set daily_ops = current_user.pdf_files|selectattr('created_at', 'greaterthan', now().replace(hour=0, minute=0, second=0))|list|length %}
+                            {% set daily_limit = 3 if current_user.subscription_status == 'free' else 999 %}
+                            <div class="progress-bar" role="progressbar" 
+                                style="width: {{ (daily_ops / daily_limit * 100)|round }}%"
+                                aria-valuenow="{{ daily_ops }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="{{ daily_limit }}">
+                                {{ daily_ops }}/{{ daily_limit }}
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        {% if current_user.subscription_status == 'free' %}
+                            Upgrade to Pro for unlimited operations
+                        {% else %}
+                            You have unlimited operations
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+    });
+</script>
+{% endblock %}

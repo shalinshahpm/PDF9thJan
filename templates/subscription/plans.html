@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12 text-center mb-4">
+        <h2>Choose Your Plan</h2>
+        <p class="text-muted">Select the plan that best fits your needs</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="price-card">
+            <h3>Free</h3>
+            <div class="price">$0/month</div>
+            <ul class="list-unstyled mt-3 mb-4">
+                <li>Basic PDF operations</li>
+                <li>Up to 3 files per day</li>
+                <li>Max file size: 5MB</li>
+                <li>Basic support</li>
+            </ul>
+            <button class="btn btn-outline-primary w-100" disabled>Current Plan</button>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="price-card featured">
+            <h3>Pro</h3>
+            <div class="price">$9.99/month</div>
+            <ul class="list-unstyled mt-3 mb-4">
+                <li>All PDF operations</li>
+                <li>Unlimited files</li>
+                <li>Max file size: 50MB</li>
+                <li>Priority support</li>
+            </ul>
+            <button class="btn btn-primary w-100 subscribe-button" data-price-id="price_pro">
+                Upgrade to Pro
+            </button>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="price-card">
+            <h3>Enterprise</h3>
+            <div class="price">$29.99/month</div>
+            <ul class="list-unstyled mt-3 mb-4">
+                <li>All Pro features</li>
+                <li>API access</li>
+                <li>Max file size: 200MB</li>
+                <li>24/7 support</li>
+            </ul>
+            <button class="btn btn-primary w-100 subscribe-button" data-price-id="price_enterprise">
+                Upgrade to Enterprise
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

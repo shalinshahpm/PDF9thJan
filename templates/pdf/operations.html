@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Operations{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2 class="text-center">PDF Tools</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div id="drop-zone" class="text-center">
+                    <i data-feather="upload-cloud" class="mb-3" style="width: 48px; height: 48px;"></i>
+                    <h4>Drag and drop PDF files here</h4>
+                    <p class="text-muted">or click to select files</p>
+                    <input type="file" id="file-input" multiple accept=".pdf" class="d-none">
+                </div>
+                <div class="progress d-none mt-3">
+                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i data-feather="scissors" class="mb-3"></i>
+                        <h5>Split PDF</h5>
+                        <button class="btn btn-primary btn-sm" onclick="handleOperation('split')">Split</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i data-feather="git-merge" class="mb-3"></i>
+                        <h5>Merge PDFs</h5>
+                        <button class="btn btn-primary btn-sm" onclick="handleOperation('merge')">Merge</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i data-feather="lock" class="mb-3"></i>
+                        <h5>Encrypt PDF</h5>
+                        <button class="btn btn-primary btn-sm" onclick="handleOperation('encrypt')">Encrypt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/feather-icons"></script>
+<script>
+    feather.replace();
+</script>
+{% endblock %}
