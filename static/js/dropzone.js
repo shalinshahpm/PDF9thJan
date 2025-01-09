@@ -6,7 +6,7 @@ class PDFDropzone {
         this.acceptedFiles = options.acceptedFiles || ['.pdf'];
         this.currentFiles = [];
         this.progressBar = document.querySelector('.progress-bar');
-        
+
         this.init();
     }
 
@@ -65,7 +65,6 @@ class PDFDropzone {
 
         this.currentFiles = validFiles;
         this.showFileList();
-        this.updateProgressBar(0);
     }
 
     validateFile(file) {
@@ -125,7 +124,7 @@ class PDFDropzone {
         if (this.progressBar) {
             this.progressBar.style.width = `${percentage}%`;
             this.progressBar.setAttribute('aria-valuenow', percentage);
-            
+
             if (percentage > 0) {
                 this.progressBar.classList.remove('d-none');
             }
@@ -141,10 +140,64 @@ class PDFDropzone {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         this.dropzoneElement.appendChild(alertElement);
-        
+
         setTimeout(() => {
             alertElement.remove();
         }, 5000);
+    }
+
+    async processFiles(operation) {
+        if (this.currentFiles.length === 0) {
+            this.showError('Please select PDF files first');
+            return;
+        }
+
+        const formData = new FormData();
+
+        if (operation === 'merge') {
+            this.currentFiles.forEach(file => formData.append('files[]', file));
+        } else {
+            formData.append('file', this.currentFiles[0]);
+
+            if (operation === 'split') {
+                const pageRanges = document.getElementById('page-ranges').value;
+                formData.append('ranges', pageRanges);
+            } else if (operation === 'watermark') {
+                const watermarkText = document.getElementById('watermark-text').value;
+                formData.append('text', watermarkText);
+            }
+        }
+
+        this.updateProgressBar(0);
+
+        try {
+            const response = await fetch(`/pdf/${operation}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${operation}_result.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            this.updateProgressBar(100);
+            setTimeout(() => {
+                this.resetDropzone();
+            }, 1000);
+        } catch (error) {
+            console.error('Error:', error);
+            this.showError('An error occurred while processing the PDF');
+            this.updateProgressBar(0);
+        }
     }
 }
 
@@ -153,3 +206,8 @@ const dropzone = new PDFDropzone({
     maxFileSize: 16 * 1024 * 1024,
     acceptedFiles: ['.pdf']
 });
+
+// Handle operations
+function handleOperation(operation) {
+    dropzone.processFiles(operation);
+}
