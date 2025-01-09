@@ -1,7 +1,7 @@
 import io
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 from flask_login import login_required, current_user
-from PyPDF2 import PdfMerger, PdfReader, PdfWriter, PdfFileWriter
+from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from models import PDFFile
@@ -132,6 +132,86 @@ def watermark_pdf():
             mimetype='application/pdf',
             as_attachment=True,
             download_name='watermarked.pdf'
+        )
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/encrypt', methods=['POST'])
+@login_required
+def encrypt_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    password = request.form.get('password', '')
+
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+        writer = PdfWriter()
+
+        for page in pdf.pages:
+            writer.add_page(page)
+
+        writer.encrypt(password)
+        output = io.BytesIO()
+        writer.write(output)
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='encrypted.pdf',
+            user_id=current_user.id,
+            operation_type='encrypt',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='encrypted.pdf'
+        )
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@pdf_bp.route('/compress', methods=['POST'])
+@login_required
+def compress_pdf():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    try:
+        pdf = PdfReader(io.BytesIO(file.read()))
+        writer = PdfWriter()
+
+        for page in pdf.pages:
+            page.compress_content_streams()  # This compresses PDF content
+            writer.add_page(page)
+
+        output = io.BytesIO()
+        writer.write(output)
+        output.seek(0)
+
+        # Save operation record
+        pdf_file = PDFFile(
+            filename='compressed.pdf',
+            user_id=current_user.id,
+            operation_type='compress',
+            status='completed'
+        )
+        db.session.add(pdf_file)
+        db.session.commit()
+
+        return send_file(
+            output,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='compressed.pdf'
         )
 
     except Exception as e:

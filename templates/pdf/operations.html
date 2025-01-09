@@ -26,7 +26,7 @@
         </div>
 
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <i data-feather="scissors" class="mb-3"></i>
@@ -38,7 +38,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-4 mb-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <i data-feather="git-merge" class="mb-3"></i>
@@ -47,7 +48,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+
+            <div class="col-md-4 mb-3">
                 <div class="card">
                     <div class="card-body text-center">
                         <i data-feather="type" class="mb-3"></i>
@@ -56,6 +58,29 @@
                             <input type="text" class="form-control mb-2" id="watermark-text" placeholder="Watermark text">
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="handleOperation('watermark')">Watermark</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i data-feather="lock" class="mb-3"></i>
+                        <h5>Encrypt PDF</h5>
+                        <div class="mb-2">
+                            <input type="password" class="form-control mb-2" id="pdf-password" placeholder="Enter password">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="handleOperation('encrypt')">Encrypt</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i data-feather="minimize-2" class="mb-3"></i>
+                        <h5>Compress PDF</h5>
+                        <button class="btn btn-primary btn-sm" onclick="handleOperation('compress')">Compress</button>
                     </div>
                 </div>
             </div>
