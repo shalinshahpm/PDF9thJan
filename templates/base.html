@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,14 +12,14 @@
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white">
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('pdf.operations') }}">PDF Pro</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('pdf.operations') }}">PDF Tools</a>
@@ -38,6 +38,12 @@
                             <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
                         </li>
                     {% endif %}
+                    <li class="nav-item ms-2">
+                        <button class="theme-toggle" aria-label="Toggle theme">
+                            <i data-feather="sun" class="theme-light-icon"></i>
+                            <i data-feather="moon" class="theme-dark-icon" style="display: none;"></i>
+                        </button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -57,7 +63,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="footer mt-auto py-3 bg-light">
+    <footer class="footer mt-auto py-3">
         <div class="container text-center">
             <span class="text-muted">© 2023 PDF Pro. All rights reserved.</span>
         </div>
@@ -76,6 +82,38 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Feather icons
             feather.replace();
+
+            // Theme toggle functionality
+            const themeToggle = document.querySelector('.theme-toggle');
+            const lightIcon = document.querySelector('.theme-light-icon');
+            const darkIcon = document.querySelector('.theme-dark-icon');
+            const htmlElement = document.documentElement;
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            htmlElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcons(savedTheme);
+
+            // Theme toggle click handler
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+                htmlElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcons(newTheme);
+            });
+
+            function updateThemeIcons(theme) {
+                if (theme === 'dark') {
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'block';
+                } else {
+                    lightIcon.style.display = 'block';
+                    darkIcon.style.display = 'none';
+                }
+            }
+
             // Initialize all tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

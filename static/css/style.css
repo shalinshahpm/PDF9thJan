@@ -1,10 +1,27 @@
-/* General Styles */
+/* Theme Variables */
 :root {
+    /* Light theme (default) */
     --adobe-blue: #1473e6;
     --adobe-hover-blue: #0d66d0;
     --adobe-text: #2c2c2c;
     --adobe-border: #e1e1e1;
     --adobe-background: #f5f5f5;
+    --adobe-card-bg: #ffffff;
+    --adobe-shadow: rgba(0,0,0,0.1);
+
+    /* Theme transition */
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+    --adobe-blue: #2d9bf0;
+    --adobe-hover-blue: #1a8ad8;
+    --adobe-text: #ffffff;
+    --adobe-border: #4a4a4a;
+    --adobe-background: #1e1e1e;
+    --adobe-card-bg: #2d2d2d;
+    --adobe-shadow: rgba(0,0,0,0.3);
 }
 
 body {
@@ -12,12 +29,13 @@ body {
     line-height: 1.6;
     color: var(--adobe-text);
     background-color: var(--adobe-background);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Header */
 .navbar {
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: var(--adobe-card-bg);
+    box-shadow: 0 1px 3px var(--adobe-shadow);
     padding: 1rem 0;
 }
 
@@ -36,18 +54,36 @@ body {
     color: var(--adobe-blue) !important;
 }
 
+/* Theme Toggle */
+.theme-toggle {
+    background: none;
+    border: none;
+    color: var(--adobe-text);
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.theme-toggle i {
+    font-size: 1.2rem;
+}
+
 /* Cards */
 .card {
     border: 1px solid var(--adobe-border);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    background-color: #fff;
+    box-shadow: 0 2px 4px var(--adobe-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+    background-color: var(--adobe-card-bg);
 }
 
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px var(--adobe-shadow);
 }
 
 .card-body {
@@ -86,7 +122,7 @@ body {
     border-radius: 8px;
     padding: 2rem;
     text-align: center;
-    background-color: #fff;
+    background-color: var(--adobe-card-bg);
     transition: all 0.3s ease;
 }
 
@@ -101,11 +137,15 @@ body {
     border-radius: 4px;
     padding: 0.75rem;
     transition: border-color 0.2s ease;
+    background-color: var(--adobe-card-bg);
+    color: var(--adobe-text);
 }
 
 .form-control:focus {
     border-color: var(--adobe-blue);
     box-shadow: 0 0 0 3px rgba(20, 115, 230, 0.15);
+    background-color: var(--adobe-card-bg);
+    color: var(--adobe-text);
 }
 
 /* Progress Bar */
@@ -127,6 +167,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: var(--adobe-text);
 }
 
 /* Tooltips */
@@ -141,7 +182,7 @@ body {
 
 /* Footer */
 .footer {
-    background-color: #fff;
+    background-color: var(--adobe-card-bg);
     border-top: 1px solid var(--adobe-border);
     padding: 1.5rem 0;
     margin-top: 2rem;
